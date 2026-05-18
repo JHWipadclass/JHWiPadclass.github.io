@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Training – Course Catalog</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=zodiak@400,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f6f2;
+      --surface: #fbfbf9;
+      --surface2: #f0ede8;
+      --border: #d4d1ca;
+      --text: #28251d;
+      --muted: #7a7974;
+      --faint: #bab9b4;
+      --primary: #01696f;
+      --primary-hover: #0c4e54;
+      --primary-soft: #cedcd8;
+      --card: #fbfbf9;
+      --font-body: 'Satoshi', Arial, sans-serif;
+      --font-display: 'Zodiak', Georgia, serif;
+      --radius-sm: .75rem;
+      --radius-md: 1rem;
+      --radius-lg: 1.25rem;
+      --radius-full: 9999px;
+      --shadow: 0 2px 12px rgba(17,24,39,.08);
+      --header-h: 68px;
+      --tab-h: 52px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.6;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+    }
+    .app-logo {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      color: var(--primary);
+      background: var(--primary-soft);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .app-title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; }
+    .app-subtitle { font-size: .8rem; color: var(--muted); }
+    .header-right { margin-left: auto; display: flex; gap: .75rem; align-items: center; }
+    .back-btn {
+      display: none;
+      min-height: 44px;
+      padding: .6rem 1.1rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--primary);
+      font-family: var(--font-body);
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .reset-btn {
+      display: none;
+      min-height: 44px;
+      padding: .6rem 1.1rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: .9rem;
+      cursor: pointer;
+    }
+
+    /* ── TAB BAR (course view only) ── */
+    .tabbar {
+      display: none;
+      position: sticky;
+      top: var(--header-h);
+      z-index: 199;
+      background: var(--card);
+      border-bottom: 2px solid var(--border);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tabbar::-webkit-scrollbar { display: none; }
+    .tabbar-inner { display: flex; }
+    .tab {
+      flex: 1;
+      min-width: 88px;
+      min-height: var(--tab-h);
+      padding: 0 .75rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-size: .88rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      white-space: nowrap;
+      transition: color .15s, border-color .15s;
+    }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* ── SCREENS ── */
+    #catalogScreen { display: block; }
+    #courseScreen  { display: none; }
+
+    /* ── CATALOG ── */
+    .catalog-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+    .catalog-heading {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      margin-bottom: .4rem;
+    }
+    .catalog-sub {
+      color: var(--muted);
+      font-size: .95rem;
+      margin-bottom: 2rem;
+    }
+    .course-list { display: flex; flex-direction: column; gap: 1rem; }
+    .course-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      cursor: pointer;
+      transition: box-shadow .15s, border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .course-item:active { border-color: var(--primary); box-shadow: 0 4px 18px rgba(1,105,111,.15); }
+    .course-badge {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: grid; place-items: center;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .course-info { flex: 1; }
+    .course-title { font-weight: 700; font-size: 1rem; margin-bottom: .2rem; }
+    .course-desc { font-size: .88rem; color: var(--muted); line-height: 1.4; }
+    .course-meta { font-size: .78rem; color: var(--faint); margin-top: .3rem; }
+    .course-arrow { color: var(--primary); font-size: 1.3rem; flex-shrink: 0; }
+
+    /* ── COURSE VIEW ── */
+    .course-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+
+    /* Hero */
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: .4rem .8rem;
+      border-radius: var(--radius-full);
+      font-size: .8rem;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      margin-bottom: .75rem;
+    }
+    .hero h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 3vw, 1.9rem);
+      line-height: 1.15;
+      margin-bottom: .75rem;
+    }
+    .hero p { color: var(--muted); font-size: .95rem; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: .75rem;
+      margin-top: 1.25rem;
+    }
+    .stat {
+      padding: .85rem 1rem;
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+    .stat strong { display: block; font-size: 1.05rem; }
+    .stat span { font-size: .8rem; color: var(--muted); }
+
+    /* Panels */
+    .section { scroll-margin-top: calc(var(--header-h) + var(--tab-h) + 1rem); }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .panel h3 { font-family: var(--font-display); font-size: 1.15rem; margin-bottom: .35rem; }
+    .panel > p { color: var(--muted); font-size: .9rem; margin-bottom: 1.25rem; }
+
+    /* Lessons */
+    .lesson-grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
+    .lesson {
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .lesson h4 { font-size: .98rem; margin-bottom: .35rem; color: var(--primary); }
+    .lesson p, .lesson ul { font-size: .9rem; color: var(--muted); }
+    .lesson ul { padding-left: 1.1rem; margin-top: .4rem; }
+
+    .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .concept-card {
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .concept-card h4 { font-size: .92rem; margin-bottom: .35rem; color: var(--primary); }
+    .concept-card p { font-size: .88rem; color: var(--muted); }
+
+    .guide-box {
+      padding: 1rem;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      font-size: .9rem;
+    }
+    .guide-box p { color: var(--muted); margin-top: .3rem; }
+
+    /* Quiz */
+    fieldset {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: var(--surface);
+    }
+    legend { font-weight: 700; font-size: .92rem; padding: 0 .35rem; }
+    .option {
+      display: flex;
+      gap: .75rem;
+      align-items: flex-start;
+      padding: .9rem;
+      border-radius: .75rem;
+      margin-top: .5rem;
+      cursor: pointer;
+      font-size: .93rem;
+      min-height: 48px;
+    }
+    .option:active { background: var(--surface2); }
+    .option.correct { outline: 2px solid rgba(67,122,34,.55); background: rgba(67,122,34,.08); }
+    .option.incorrect { outline: 2px solid rgba(161,44,123,.45); background: rgba(161,44,123,.08); }
+    .option input[type="radio"] {
+      width: 20px; height: 20px;
+      margin-top: .15rem; flex-shrink: 0;
+      accent-color: var(--primary);
+    }
+    .feedback { font-size: .85rem; color: var(--muted); margin-top: .4rem; padding: 0 .25rem; }
+
+    /* Skills */
+    .skills-grid { display: grid; gap: 1.25rem; margin-bottom: 1rem; }
+    .skills-grid label { display: block; font-weight: 700; margin-bottom: .3rem; }
+    .skills-grid p { font-size: .88rem; color: var(--muted); margin-bottom: .5rem; }
+    textarea {
+      width: 100%; min-height: 130px;
+      padding: .9rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: .93rem;
+      resize: vertical;
+    }
+
+    /* Review */
+    .review-grid { display: grid; gap: 1rem; }
+    .review-card {
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: .88rem;
+      color: var(--muted);
+    }
+    .review-card h4 { font-size: .92rem; margin-bottom: .5rem; color: var(--primary); }
+
+    /* Buttons */
+    .scoreline { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: 1rem; }
+    .btn {
+      min-height: 48px;
+      padding: .7rem 1.2rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: .93rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn.primary { background: var(--primary); color: #fff; border-color: transparent; }
+    .btn.primary:active { background: var(--primary-hover); }
+    .scorepill {
+      padding: .5rem .9rem;
+      border-radius: var(--radius-full);
+      background: var(--primary-soft);
+      border: 1px solid var(--border);
+      font-size: .85rem;
+    }
+
+    .hidden { display: none; }
+    .muted { color: var(--muted); }
+
+    @media (max-width: 600px) {
+      .concept-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- APP HEADER -->
+  <header class="app-header">
+    <div class="app-logo" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6"/><path d="M9 12h6"/><path d="M9 15h3"/>
+      </svg>
+    </div>
+    <div>
+      <div class="app-title" id="headerTitle">AI Training</div>
+      <div class="app-subtitle" id="headerSub">Course Catalog</div>
+    </div>
+    <div class="header-right">
+      <button class="reset-btn" id="resetBtn" type="button">Reset</button>
+      <button class="back-btn" id="backBtn" type="button">← Catalog</button>
+    </div>
+  </header>
+
+  <!-- TAB BAR -->
+  <nav class="tabbar" id="tabbar" aria-label="Course sections">
+    <div class="tabbar-inner">
+      <button class="tab active" data-target="training">Training</button>
+      <button class="tab" data-target="quiz">Quiz</button>
+      <button class="tab" data-target="skills">Skills</button>
+      <button class="tab" data-target="review">Review</button>
+    </div>
+  </nav>
+
+  <!-- CATALOG SCREEN -->
+  <div id="catalogScreen">
+    <div class="catalog-wrap">
+      <h1 class="catalog-heading">AI Training Courses</h1>
+      <p class="catalog-sub">Tap a course to begin. Complete training, quiz, skills, and review in each session.</p>
+      <div class="course-list">
+
+        <div class="course-item" data-course="ai1">
+          <div class="course-badge">AI1</div>
+          <div class="course-info">
+            <div class="course-title">What AI Actually Is</div>
+            <div class="course-desc">Learn what AI actually is, without the hype, fear, or science-fiction confusion.</div>
+            <div class="course-meta">3 core ideas · 4 quiz questions · 2 exercises</div>
+          </div>
+          <div class="course-arrow">›</div>
+        </div>
+
+        <div class="course-item" data-course="ai2">
+          <div class="course-badge">AI2</div>
+          <div class="course-info">
+            <div class="course-title">How AI Is Built</div>
+            <div class="course-desc">See how AI systems are built from data, models, training, and computing power.</div>
+            <div class="course-meta">4 building blocks · 4 quiz questions · 2 exercises</div>
+          </div>
+          <div class="course-arrow">›</div>
+        </div>
+
+        <div class="course-item" data-course="ai3">
+          <div class="course-badge">AI3</div>
+          <div class="course-info">
+            <div class="course-title">The AI Landscape</div>
+            <div class="course-desc">Get oriented in the AI landscape so tools, categories, and buzzwords start to make sense.</div>
+            <div class="course-meta">4 landscape categories · 4 quiz questions · 2 exercises</div>
+          </div>
+          <div class="course-arrow">›</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- COURSE SCREEN -->
+  <div id="courseScreen">
+    <div class="course-wrap" id="courseContent"></div>
+  </div>
+
+  <script>
+
+  // ── COURSE DATA ──
+  const courses = {
+
+    ai1: {
+      title: 'AI1 – What AI Actually Is',
+      sub: 'Track 2 – Understanding AI',
+      heading: 'Learn what AI actually is, without the hype, fear, or science-fiction confusion.',
+      intro: 'Many people use the term AI loosely, as if it means a machine that thinks exactly like a person. In practice, today\'s AI is better understood as software systems trained to recognize patterns, generate outputs, and respond to inputs in ways that can seem intelligent.',
+      stats: [['3','Core ideas'],['4','Quiz questions'],['2','Practice exercises'],['Mental model','Main goal']],
+      training: `
+        <p class="muted">A useful definition of AI should be practical, not mystical.</p>
+        <div class="lesson-grid">
+          <article class="lesson">
+            <h4>1. AI is trained pattern-matching software</h4>
+            <p>Most modern AI systems learn from large amounts of example data. They become good at spotting patterns, predicting likely outputs, or generating responses that fit what they were trained on.</p>
+            <ul><li>It works from patterns in data.</li><li>It does not need human-style consciousness to be useful.</li><li>Its strength comes from scale and training.</li></ul>
+          </article>
+          <article class="lesson">
+            <h4>2. AI can seem intelligent without truly understanding</h4>
+            <p>Because AI can answer questions, summarize documents, and generate text, people often assume it understands the world in the same way humans do. That assumption is usually too strong.</p>
+            <ul><li>Fluent output is not proof of deep understanding.</li><li>Good answers can still contain mistakes.</li><li>Confidence is not the same as truth.</li></ul>
+          </article>
+          <article class="lesson">
+            <h4>3. A realistic view makes AI more useful</h4>
+            <p>If you treat AI as a capable but limited tool, you will use it better. The goal is not to worship it or fear it, but to understand what it does well and where judgment is still needed.</p>
+            <ul><li>Use it for help, not blind trust.</li><li>Check important work.</li><li>Know the difference between assistance and authority.</li></ul>
+          </article>
+        </div>
+        <div class="concept-grid">
+          <div class="concept-card"><h4>Common misunderstanding</h4><p>"If AI sounds human, it must think like a human."</p></div>
+          <div class="concept-card"><h4>Better understanding</h4><p>"AI can produce useful human-like outputs because it was trained on patterns, not because it became a person."</p></div>
+        </div>
+        <div class="guide-box"><strong>Simple analogy</strong><p>A calculator can outperform a person at arithmetic without understanding mathematics the way a mathematician does. AI is different in form, but the lesson is similar: performance and human-style understanding are not the same thing.</p></div>`,
+      quiz: {
+        questions: [
+          { legend: '1. What is the most practical description of modern AI in this lesson?', name: 'q1', options: ['Pattern-based software trained on data.','A magical mind with perfect judgment.','A human brain inside a computer.','A tool that is always correct.'] },
+          { legend: '2. Why can AI seem intelligent even when it does not truly understand like a person?', name: 'q2', options: ['Because fluent output can imitate intelligence.','Because it has emotions.','Because it is always conscious.','Because it cannot make mistakes.'] },
+          { legend: '3. What is the best attitude to take toward AI?', name: 'q3', options: ['Blind trust.','Total fear.','Realistic use with checking and judgment.','Ignore it completely.'] },
+          { legend: '4. What is one main message of AI1?', name: 'q4', options: ['AI is best understood as a practical tool with strengths and limits.','AI is exactly the same as a human mind.','AI should never be used.','AI always knows the truth.'] }
+        ],
+        answers: {
+          q1: { correct: 'a', explain: 'This lesson describes modern AI as pattern-based software trained on data.' },
+          q2: { correct: 'a', explain: 'AI can produce fluent output that looks intelligent, even without human-style understanding.' },
+          q3: { correct: 'c', explain: 'The healthiest approach is realistic use with checking and judgment.' },
+          q4: { correct: 'a', explain: 'AI1 teaches that AI is a practical tool with strengths and limits.' }
+        }
+      },
+      skills: {
+        label1: 'Explain AI to a friend',
+        desc1: 'Write a short explanation of what AI actually is for someone who thinks AI means a machine that thinks exactly like a person.',
+        placeholder1: 'Write your explanation here...',
+        label2: 'Describe one useful caution',
+        desc2: 'Write one or two sentences explaining why AI output should still be checked, even when it sounds confident and polished.',
+        placeholder2: 'Write your caution here...'
+      },
+      evaluate: function(rewrite, own) {
+        const good = [], bad = [];
+        const r = rewrite.toLowerCase(), o = own.toLowerCase();
+        const rw = r.split(/\s+/).filter(Boolean), ow = o.split(/\s+/).filter(Boolean);
+        if (rw.length >= 24) good.push('You provided enough detail to show a workable understanding.'); else bad.push('Add more detail so your explanation is clearer and more complete.');
+        if (/(pattern|trained|data|software)/.test(r)) good.push('You described AI in terms of training, patterns, or data.'); else bad.push('Include the idea that AI works from patterns, training, or data.');
+        if (/(not human|not a person|not conscious|not exactly like a human)/.test(r)) good.push('You separated AI from human-like thinking.'); else bad.push('Clarify that AI is not the same as a human mind.');
+        if (/(check|verify|mistake|wrong|confident|review)/.test(r+o)) good.push('You recognized the need to review AI output carefully.'); else bad.push('Include one caution about checking AI output.');
+        if (/(tool|useful|assist|help)/.test(r+o)) good.push('You treated AI as a useful tool rather than magic or authority.'); else bad.push('Frame AI as a tool that can assist but should not replace judgment.');
+        return { good, bad };
+      },
+      reviewIntro: 'This feedback summarizes what went well and what did not in your understanding of what AI actually is.'
+    },
+
+    ai2: {
+      title: 'AI2 – How AI Is Built',
+      sub: 'Track 2 – Understanding AI',
+      heading: 'See how AI systems are built from data, models, training, and computing power.',
+      intro: 'AI can feel mysterious when people talk about it only in broad terms. In reality, most modern AI systems are built from understandable parts: training data, a model architecture, a training process, and the hardware needed to run it.',
+      stats: [['4','Core building blocks'],['4','Quiz questions'],['2','Practice exercises'],['Construction view','Main goal']],
+      training: `
+        <p class="muted">A basic understanding of AI construction makes later AI discussions much easier to follow.</p>
+        <div class="lesson-grid">
+          <article class="lesson">
+            <h4>1. Data is the starting material</h4>
+            <p>AI systems are trained on data such as text, images, audio, or other examples. The data gives the system patterns to learn from, much like practice material shapes a student.</p>
+            <ul><li>More data can improve coverage.</li><li>Bad data can lead to bad results.</li><li>Data quality matters, not just quantity.</li></ul>
+          </article>
+          <article class="lesson">
+            <h4>2. The model is the learning structure</h4>
+            <p>A model is the mathematical system that learns from the data. You can think of it as the internal structure that stores patterns and uses them to make predictions or generate outputs.</p>
+            <ul><li>It is not a brain, but it is a learned system.</li><li>Different models are built for different tasks.</li><li>The design of the model affects what it can do well.</li></ul>
+          </article>
+          <article class="lesson">
+            <h4>3. Training teaches the model</h4>
+            <p>Training is the process of adjusting the model so it gets better at producing useful outputs. During training, the system compares its guesses with desired patterns and improves step by step.</p>
+            <ul><li>Training takes time.</li><li>Training can be expensive.</li><li>Better training can improve performance.</li></ul>
+          </article>
+        </div>
+        <div class="concept-grid">
+          <div class="concept-card"><h4>4. Compute powers the process</h4><p>Large AI systems need major computing power to train and run. Hardware such as specialized chips helps process huge amounts of data and mathematical operations quickly.</p></div>
+          <div class="concept-card"><h4>Simple mental model</h4><p>Data is the material, the model is the structure, training is the teaching process, and compute is the engine that makes it possible.</p></div>
+        </div>
+        <div class="guide-box"><strong>Plain-language formula</strong><p>A useful shorthand is: data + model + training + compute = the foundation of modern AI systems.</p></div>`,
+      quiz: {
+        questions: [
+          { legend: '1. What gives an AI system examples to learn from?', name: 'q1', options: ['Training data.','Magic.','Guesswork alone.','Only electricity.'] },
+          { legend: '2. In simple terms, what is a model?', name: 'q2', options: ['The learning structure that stores patterns and produces outputs.','A list of keyboard shortcuts.','A file cabinet.','A guarantee of truth.'] },
+          { legend: '3. What does training do?', name: 'q3', options: ['It adjusts the model so it improves over time.','It removes all errors forever.','It turns the model into a human being.','It makes data unnecessary.'] },
+          { legend: '4. Why is compute important in AI?', name: 'q4', options: ['It provides the processing power needed to train and run models.','It makes every answer correct.','It replaces data entirely.','It removes the need for models.'] }
+        ],
+        answers: {
+          q1: { correct: 'a', explain: 'Training data gives the AI system examples and patterns to learn from.' },
+          q2: { correct: 'a', explain: 'A model is the learned structure that stores patterns and produces outputs.' },
+          q3: { correct: 'a', explain: 'Training improves the model by adjusting it over time.' },
+          q4: { correct: 'a', explain: 'Compute supplies the processing power needed to train and run AI systems.' }
+        }
+      },
+      skills: {
+        label1: 'Explain the four building blocks',
+        desc1: 'Write a short explanation of data, model, training, and compute as if you were explaining them to a beginner.',
+        placeholder1: 'Write your explanation here...',
+        label2: 'Explain why quality matters',
+        desc2: 'Write one or two sentences explaining why poor data or weak training can lead to weak AI output.',
+        placeholder2: 'Write your explanation here...'
+      },
+      evaluate: function(rewrite, own) {
+        const good = [], bad = [];
+        const r = rewrite.toLowerCase(), o = own.toLowerCase();
+        const rw = r.split(/\s+/).filter(Boolean);
+        if (rw.length >= 24) good.push('You provided enough detail to explain the AI-building process.'); else bad.push('Add more detail so your explanation is easier for a beginner to follow.');
+        if (/data/.test(r)) good.push('You included the role of data.'); else bad.push('Mention that AI systems learn from data.');
+        if (/model/.test(r)) good.push('You included the role of the model.'); else bad.push('Mention the model as the structure that learns patterns.');
+        if (/training|train/.test(r)) good.push('You included the role of training.'); else bad.push('Explain how training improves the model over time.');
+        if (/compute|chip|hardware|processing/.test(r+o)) good.push('You included the role of compute or hardware.'); else bad.push('Mention the processing power needed to train and run AI.');
+        if (/quality|poor|weak|mistake|bad/.test(r+o)) good.push('You recognized that weak inputs can lead to weak outputs.'); else bad.push('Include one caution about poor data or weak training leading to poor results.');
+        return { good, bad };
+      },
+      reviewIntro: 'This feedback summarizes what went well and what did not in your understanding of how AI is built.'
+    },
+
+    ai3: {
+      title: 'AI3 – The AI Landscape',
+      sub: 'Track 2 – Understanding AI',
+      heading: 'Get oriented in the AI landscape so the tools, categories, and buzzwords start to make sense.',
+      intro: 'The AI world can feel crowded because many different tools and terms get grouped together under one label. In reality, the landscape includes different model types, companies, uses, and product styles. This lesson gives a map of the territory.',
+      stats: [['4','Landscape categories'],['4','Quiz questions'],['2','Practice exercises'],['Orientation','Main goal']],
+      training: `
+        <p class="muted">The AI landscape becomes easier to follow once you separate major categories.</p>
+        <div class="lesson-grid">
+          <article class="lesson">
+            <h4>1. AI includes many types of systems</h4>
+            <p>Some AI tools generate text, some analyze images, some recognize speech, and some help with coding or search. These systems may share underlying ideas, but they do different jobs.</p>
+            <ul><li>Text AI handles writing and conversation.</li><li>Image AI works with pictures and visual analysis.</li><li>Other systems focus on audio, video, search, or prediction.</li></ul>
+          </article>
+          <article class="lesson">
+            <h4>2. Models, apps, and companies are different layers</h4>
+            <p>A company may build a model, and another company may build a product on top of it. A chatbot app is not the same thing as the underlying model, and the model is not the same thing as the company behind it.</p>
+            <ul><li>Company is the organization.</li><li>Model is the AI engine.</li><li>Product is the user-facing tool.</li></ul>
+          </article>
+          <article class="lesson">
+            <h4>3. The field changes quickly</h4>
+            <p>New tools, models, and features appear constantly. That makes the landscape exciting, but also confusing, because names change, rankings shift, and today's leader may not stay ahead forever.</p>
+            <ul><li>Fast change is normal.</li><li>Marketing language can distort reality.</li><li>Practical usefulness matters more than headlines.</li></ul>
+          </article>
+        </div>
+        <div class="concept-grid">
+          <div class="concept-card"><h4>4. Think in categories, not just brands</h4><p>It helps to ask: is this a model, an app, a platform, a search tool, a coding tool, or a media-generation tool? Category thinking gives you a better map than brand names alone.</p></div>
+          <div class="concept-card"><h4>Simple mental model</h4><p>The AI landscape is an ecosystem made of builders, models, products, and use cases, all moving at different speeds.</p></div>
+        </div>
+        <div class="guide-box"><strong>Practical habit</strong><p>When you meet a new AI tool, ask three questions: what category is it, what model powers it, and what job is it best at?</p></div>`,
+      quiz: {
+        questions: [
+          { legend: '1. Why is the AI landscape often confusing?', name: 'q1', options: ['Because many different tools and categories are grouped under the single label AI.','Because there is only one AI tool.','Because nothing ever changes.','Because categories do not matter.'] },
+          { legend: '2. What is the difference between a company, a model, and a product?', name: 'q2', options: ['They are different layers: organization, AI engine, and user-facing tool.','They are always the exact same thing.','Only companies matter.','Products never use models.'] },
+          { legend: '3. Why is category thinking useful?', name: 'q3', options: ['It helps you understand what kind of tool you are looking at and what it is for.','It eliminates all change in the field.','It proves one brand is always best.','It removes the need to evaluate usefulness.'] },
+          { legend: '4. What is a good way to approach a new AI tool?', name: 'q4', options: ['Ask what category it belongs to, what powers it, and what job it does best.','Assume the marketing is always accurate.','Ignore what it is for.','Judge it only by brand popularity.'] }
+        ],
+        answers: {
+          q1: { correct: 'a', explain: 'The AI label covers many different tools, systems, and categories, which creates confusion.' },
+          q2: { correct: 'a', explain: 'A company is the organization, a model is the AI engine, and a product is the user-facing tool.' },
+          q3: { correct: 'a', explain: 'Category thinking helps you understand what a tool is built to do.' },
+          q4: { correct: 'a', explain: 'A useful approach is to ask what kind of tool it is, what powers it, and what job it does best.' }
+        }
+      },
+      skills: {
+        label1: 'Classify an AI tool',
+        desc1: 'Choose any AI tool you know and explain whether it is best thought of as a model, a product, a platform, or some combination.',
+        placeholder1: 'Write your classification here...',
+        label2: 'Explain the landscape in plain English',
+        desc2: 'Write one short explanation of why the AI landscape feels crowded and fast-moving to beginners.',
+        placeholder2: 'Write your explanation here...'
+      },
+      evaluate: function(rewrite, own) {
+        const good = [], bad = [];
+        const r = rewrite.toLowerCase(), o = own.toLowerCase();
+        const rw = r.split(/\s+/).filter(Boolean);
+        if (rw.length >= 24) good.push('You provided enough detail to explain part of the AI landscape clearly.'); else bad.push('Add more detail so your explanation better maps the AI landscape.');
+        if (/model|product|platform|company/.test(r)) good.push('You identified at least one important layer in the AI ecosystem.'); else bad.push('Mention a layer such as company, model, product, or platform.');
+        if (/category|tool|use case|job/.test(r+o)) good.push('You described the tool in category or use-case terms.'); else bad.push('Explain what kind of AI tool it is or what job it is best at.');
+        if (/fast|change|moving|new|crowded/.test(r+o)) good.push('You recognized that the field changes quickly.'); else bad.push('Include the idea that the AI field changes quickly and can feel crowded.');
+        if (/marketing|hype|practical|useful/.test(r+o)) good.push('You showed awareness that practical usefulness matters more than hype.'); else bad.push('Add one sentence about hype versus practical usefulness.');
+        return { good, bad };
+      },
+      reviewIntro: 'This feedback summarizes what went well and what did not in your understanding of the AI landscape.'
+    }
+  };
+
+  // ── APP STATE ──
+  let currentCourse = null;
+
+  // ── NAV ──
+  const catalogScreen = document.getElementById('catalogScreen');
+  const courseScreen  = document.getElementById('courseScreen');
+  const courseContent = document.getElementById('courseContent');
+  const tabbar        = document.getElementById('tabbar');
+  const backBtn       = document.getElementById('backBtn');
+  const resetBtn      = document.getElementById('resetBtn');
+  const headerTitle   = document.getElementById('headerTitle');
+  const headerSub     = document.getElementById('headerSub');
+
+  document.querySelectorAll('.course-item').forEach(item => {
+    item.addEventListener('click', () => openCourse(item.dataset.course));
+  });
+
+  backBtn.addEventListener('click', showCatalog);
+
+  function showCatalog() {
+    catalogScreen.style.display = 'block';
+    courseScreen.style.display  = 'none';
+    tabbar.style.display        = 'none';
+    backBtn.style.display       = 'none';
+    resetBtn.style.display      = 'none';
+    headerTitle.textContent     = 'AI Training';
+    headerSub.textContent       = 'Course Catalog';
+    currentCourse = null;
+    window.scrollTo(0, 0);
+  }
+
+  function openCourse(id) {
+    currentCourse = id;
+    const c = courses[id];
+    courseContent.innerHTML = buildCourse(c, id);
+    catalogScreen.style.display = 'none';
+    courseScreen.style.display  = 'block';
+    tabbar.style.display        = 'block';
+    backBtn.style.display       = 'flex';
+    resetBtn.style.display      = 'flex';
+    headerTitle.textContent     = c.title;
+    headerSub.textContent       = c.sub;
+    window.scrollTo(0, 0);
+    initCourse(id, c);
+    initTabs();
+  }
+
+  // ── BUILD COURSE HTML ──
+  function buildCourse(c, id) {
+    const statsHtml = c.stats.map(([v,l]) => `<div class="stat"><strong>${v}</strong><span>${l}</span></div>`).join('');
+    const qHtml = c.quiz.questions.map(q => {
+      const opts = q.options.map((o, i) => {
+        const val = String.fromCharCode(97+i);
+        return `<label class="option"><input type="radio" name="${q.name}" value="${val}"> ${o}</label>`;
+      }).join('');
+      return `<fieldset><legend>${q.legend}</legend>${opts}<div class="feedback" data-feedback="${q.name}"></div></fieldset>`;
+    }).join('');
+
+    return `
+      <div class="hero">
+        <span class="eyebrow">${c.sub}</span>
+        <h2>${c.heading}</h2>
+        <p>${c.intro}</p>
+        <div class="stats">${statsHtml}</div>
+      </div>
+
+      <section class="panel section" id="training">
+        <h3>Training</h3>
+        ${c.training}
+      </section>
+
+      <section class="panel section" id="quiz">
+        <h3>4-question multiple choice</h3>
+        <p>Answer the questions based on the lesson above.</p>
+        <form id="quizForm">
+          ${qHtml}
+          <div class="scoreline">
+            <button class="btn primary" type="submit">Submit answers</button>
+            <button class="btn" type="button" id="revealBtn">Reveal answers</button>
+            <div class="scorepill" id="scoreBox">Score: not graded yet</div>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel section" id="skills">
+        <h3>Skills testing</h3>
+        <p>${c.skills.desc1.replace(/^./, m => m.toUpperCase())}</p>
+        <div class="skills-grid">
+          <div>
+            <label for="rewrite">${c.skills.label1}</label>
+            <p>${c.skills.desc1}</p>
+            <textarea id="rewrite" placeholder="${c.skills.placeholder1}"></textarea>
+          </div>
+          <div>
+            <label for="own">${c.skills.label2}</label>
+            <p>${c.skills.desc2}</p>
+            <textarea id="own" placeholder="${c.skills.placeholder2}"></textarea>
+          </div>
+        </div>
+        <div class="scoreline">
+          <button class="btn primary" type="button" id="reviewBtn">Review my work</button>
+          <div class="scorepill" id="skillsState">Review pending</div>
+        </div>
+      </section>
+
+      <section class="panel section" id="review">
+        <h3>Review</h3>
+        <p>${c.reviewIntro}</p>
+        <div class="review-grid">
+          <div class="review-card">
+            <h4>Quiz review</h4>
+            <div id="quizReviewStart">Submit the quiz to generate feedback.</div>
+            <div id="quizReview" class="hidden"></div>
+          </div>
+          <div class="review-card">
+            <h4>Skills review</h4>
+            <div id="skillsReviewStart">Complete the writing prompts and use Review my work.</div>
+            <div id="skillsReview" class="hidden"></div>
+          </div>
+        </div>
+      </section>`;
+  }
+
+  // ── INIT COURSE LOGIC ──
+  function initCourse(id, c) {
+    const quizForm = document.getElementById('quizForm');
+    const scoreBox = document.getElementById('scoreBox');
+    const answers  = c.quiz.answers;
+
+    function clearMarks() {
+      document.querySelectorAll('.option').forEach(o => o.classList.remove('correct','incorrect'));
+      document.querySelectorAll('[data-feedback]').forEach(f => f.textContent = '');
+    }
+
+    function gradeQuiz(reveal = false) {
+      clearMarks();
+      let score = 0;
+      const misses = [];
+      for (const [key, meta] of Object.entries(answers)) {
+        const chosen  = quizForm.querySelector(`input[name="${key}"]:checked`);
+        const correct = quizForm.querySelector(`input[name="${key}"][value="${meta.correct}"]`);
+        const fb      = document.querySelector(`[data-feedback="${key}"]`);
+        if (chosen && chosen.value === meta.correct) {
+          score++;
+          chosen.closest('.option').classList.add('correct');
+          fb.textContent = 'Correct. ' + meta.explain;
+        } else {
+          misses.push(key);
+          if (chosen) chosen.closest('.option').classList.add('incorrect');
+          if (reveal || chosen) correct.closest('.option').classList.add('correct');
+          fb.textContent = (chosen ? 'Not quite. ' : 'No answer selected. ') + meta.explain;
+        }
+      }
+      scoreBox.textContent = `Score: ${score}/4`;
+      const good = [], bad = [];
+      if (score >= 3) good.push('Strong result — you have a solid grasp of the key ideas.');
+      else good.push('You are building understanding — review the explanations and try again.');
+      if (!misses.length) good.push('You answered every question correctly.');
+      misses.forEach(m => bad.push(`Review the explanation for question ${m.replace('q','')}.`));
+      if (!bad.length) bad.push('No major issues in the quiz section.');
+      document.getElementById('quizReviewStart').classList.add('hidden');
+      const qr = document.getElementById('quizReview');
+      qr.classList.remove('hidden');
+      qr.innerHTML = `<p><strong>What went well:</strong></p><ul>${good.map(x=>`<li>${x}</li>`).join('')}</ul><p><strong>To work on:</strong></p><ul>${bad.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+    }
+
+    quizForm.addEventListener('submit', e => { e.preventDefault(); gradeQuiz(false); });
+    document.getElementById('revealBtn').addEventListener('click', () => gradeQuiz(true));
+
+    document.getElementById('reviewBtn').addEventListener('click', () => {
+      const rewrite = document.getElementById('rewrite').value.trim();
+      const own     = document.getElementById('own').value.trim();
+      const result  = c.evaluate(rewrite, own);
+      document.getElementById('skillsReviewStart').classList.add('hidden');
+      const sr = document.getElementById('skillsReview');
+      sr.classList.remove('hidden');
+      sr.innerHTML = `<p><strong>What went well:</strong></p><ul>${(result.good.length?result.good:['You attempted the exercises.']).map(x=>`<li>${x}</li>`).join('')}</ul><p><strong>To work on:</strong></p><ul>${(result.bad.length?result.bad:['No major issues.']).map(x=>`<li>${x}</li>`).join('')}</ul>`;
+      document.getElementById('skillsState').textContent = (rewrite||own) ? 'Review completed' : 'Please enter answers first';
+    });
+
+    resetBtn.addEventListener('click', () => {
+      quizForm.reset();
+      document.getElementById('rewrite').value = '';
+      document.getElementById('own').value = '';
+      clearMarks();
+      scoreBox.textContent = 'Score: not graded yet';
+      document.getElementById('skillsState').textContent = 'Review pending';
+      document.getElementById('quizReviewStart').classList.remove('hidden');
+      document.getElementById('skillsReviewStart').classList.remove('hidden');
+      document.getElementById('quizReview').classList.add('hidden');
+      document.getElementById('skillsReview').classList.add('hidden');
+      document.getElementById('quizReview').innerHTML = '';
+      document.getElementById('skillsReview').innerHTML = '';
+    });
+  }
+
+  // ── TABS ──
+  function initTabs() {
+    const tabs = [...document.querySelectorAll('.tab')];
+    tabs.forEach(tab => {
+      // Clone to remove stale listeners
+      const fresh = tab.cloneNode(true);
+      tab.parentNode.replaceChild(fresh, tab);
+    });
+    const freshTabs = [...document.querySelectorAll('.tab')];
+    freshTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        freshTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const target = document.getElementById(tab.dataset.target);
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // Highlight tab on scroll
+    const sections = ['training','quiz','skills','review'].map(id => document.getElementById(id));
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const activeTabs = document.querySelectorAll('.tab');
+          activeTabs.forEach(t => t.classList.remove('active'));
+          const match = [...activeTabs].find(t => t.dataset.target === entry.target.id);
+          if (match) match.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    sections.forEach(s => s && obs.observe(s));
+  }
+
+  </script>
+</body>
+</html>
