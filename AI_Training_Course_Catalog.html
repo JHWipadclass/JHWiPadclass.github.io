@@ -84,7 +84,13 @@
     }
     .brand-title { margin: 0; font-family: var(--font-display); font-size: var(--text-lg); }
     .brand-sub { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
-    .actions { display: flex; gap: .75rem; align-items: center; }
+    .actions { display: flex; gap: .5rem; align-items: center; flex-shrink: 0; }
+    @media (max-width: 600px) {
+      .topbar { padding: .6rem 1rem; }
+      .brand-sub { display: none; }
+      .sync-status { padding: 0 .6rem; font-size: .72rem; }
+      #syncLabel { display: none; }
+    }
     .pill-btn, .theme-btn, .primary-btn, .secondary-btn {
       min-height: 40px; border-radius: var(--radius-full); cursor: pointer; transition: .2s ease;
     }
@@ -395,7 +401,7 @@
       font-size: .78rem; padding: .4rem .8rem; border-radius: var(--radius-full);
       border: 1px solid var(--color-border); background: var(--color-surface-2);
       color: var(--color-text-muted); cursor: pointer; min-height: 40px;
-      display: flex; align-items: center; gap: .4rem; transition: .2s;
+      display: flex; align-items: center; gap: .4rem; transition: .2s; flex-shrink: 0;
     }
     .sync-status:hover { background: var(--color-surface); }
     .sync-status.synced { color: var(--color-success); border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-border)); }
