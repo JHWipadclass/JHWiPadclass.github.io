@@ -291,7 +291,9 @@
     .lesson-card h4 { margin: 0 0 .5rem; font-size: 1rem; color: var(--color-primary); }
     .lesson-card p, .lesson-card li { color: var(--color-text-muted); font-size: var(--text-sm); }
     .lesson-card ul { padding-left: 1rem; margin: .6rem 0 0; }
-    article.lesson { display: block; width: 100%; padding: 1rem; border-radius: var(--radius-lg); background: var(--color-surface); border: 1px solid var(--color-border); }
+    article.lesson { display: block !important; width: 100% !important; box-sizing: border-box; padding: 1rem; border-radius: var(--radius-lg); background: var(--color-surface); border: 1px solid var(--color-border); }
+    .lesson-grid article { display: block !important; width: 100% !important; }
+    .concept-grid div { display: block !important; width: 100% !important; }
     article.lesson h4 { margin: 0 0 .5rem; font-size: 1rem; color: var(--color-primary); }
     article.lesson p, article.lesson li { color: var(--color-text-muted); font-size: var(--text-sm); }
     article.lesson ul { padding-left: 1rem; margin: .6rem 0 0; }
