@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Builder — AI Training</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent:      #B5651D;
+    --accent-light:#F5E6D3;
+    --bg:          #F7F3EE;
+    --surface:     #EFEAE3;
+    --surface2:    #E8E1D8;
+    --border:      #D4C9BA;
+    --text:        #3A2E22;
+    --text-dim:    #7A6A58;
+    --text-bright: #1E1510;
+    --success:     #3A7D55;
+    --warn:        #B5651D;
+    --danger:      #B03030;
+    --font: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; }
+
+  /* Header */
+  .header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 16px 28px; display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .accent-bar { width: 3px; height: 36px; background: var(--accent); border-radius: 2px; flex-shrink: 0; }
+  .header-sub  { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-dim); }
+  .header-main { font-size: 15px; font-weight: 700; color: var(--text-bright); letter-spacing: .02em; }
+  .header-right { margin-left: auto; }
+
+  /* Phase nav */
+  .phase-nav { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .phase-tab {
+    flex: 1; padding: 12px 8px; font-family: var(--font); font-size: 9px;
+    letter-spacing: .14em; text-transform: uppercase; text-align: center;
+    cursor: pointer; background: transparent; border: none;
+    border-bottom: 2px solid transparent; color: var(--text-dim); transition: all .15s;
+  }
+  .phase-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .phase-tab.done   { color: var(--success); border-bottom-color: var(--success); }
+  .phase-tab:disabled { cursor: default; opacity: .4; }
+
+  /* Layout */
+  .body { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 112px); }
+  .left-panel  { border-right: 1px solid var(--border); padding: 24px 28px; overflow-y: auto; }
+  .right-panel { padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; background: var(--bg); }
+
+  /* Section label */
+  .section-label {
+    font-size: 9px; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 14px;
+    border-bottom: 1px solid var(--border); padding-bottom: 6px;
+  }
+  .phase-intro { font-size: 11px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.65; }
+
+  /* Fields */
+  .field-group { margin-bottom: 20px; }
+  .field-num   { font-size: 9px; color: var(--accent); letter-spacing: .12em; margin-bottom: 3px; }
+  .field-label { font-size: 12px; color: var(--text-bright); font-weight: 600; margin-bottom: 2px; }
+  .field-sub   { font-size: 10px; color: var(--text-dim); font-style: italic; margin-bottom: 8px; }
+  textarea {
+    width: 100%; background: #FBF8F4; border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text); font-family: var(--font); font-size: 12px;
+    padding: 9px 11px; resize: vertical; outline: none; min-height: 58px;
+    transition: border-color .15s; line-height: 1.5;
+  }
+  textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px #B5651D18; }
+
+  /* Preview box */
+  .preview-label { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+  .preview-box {
+    background: #FBF8F4; border: 1px solid var(--border); border-radius: 4px;
+    padding: 14px; font-size: 11px; line-height: 1.7; white-space: pre-wrap;
+    word-break: break-word; min-height: 100px; position: relative; color: var(--text);
+  }
+  .preview-box.tall   { min-height: 220px; }
+  .preview-box.taller { min-height: 280px; }
+  .preview-empty { color: var(--text-dim); font-style: italic; }
+
+  /* Progress */
+  .progress-row { font-size: 10px; color: var(--text-dim); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); display: inline-block; margin: 0 1px; transition: background .2s; }
+  .dot.filled { background: var(--accent); }
+
+  /* Buttons */
+  .btn {
+    font-family: var(--font); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    font-weight: 700; padding: 10px 18px; cursor: pointer; border-radius: 3px;
+    transition: opacity .12s, background .12s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary   { background: var(--accent); color: #FBF8F4; border: none; }
+  .btn-primary:hover  { opacity: .85; }
+  .btn-secondary { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-row { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+
+  /* Copy button */
+  .copy-btn {
+    position: absolute; top: 10px; right: 10px; background: var(--surface2);
+    border: 1px solid var(--border); color: var(--text-dim); font-size: 9px;
+    letter-spacing: .12em; text-transform: uppercase; padding: 4px 10px;
+    cursor: pointer; border-radius: 3px; font-family: var(--font); transition: all .12s;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Callout */
+  .callout { padding: 14px; background: var(--accent-light); border-radius: 4px; border: 1px solid #D4A97A; }
+  .callout-label { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .callout-body  { font-size: 11px; color: var(--text); line-height: 1.65; }
+
+  /* Starter ref */
+  .starter-ref { padding: 12px; background: var(--surface2); border-radius: 4px; border: 1px solid var(--border); margin-bottom: 20px; }
+  .starter-ref-label { font-size: 9px; letter-spacing: .14em; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+  .starter-ref-text  { font-size: 11px; color: var(--text-dim); white-space: pre-wrap; line-height: 1.6; }
+
+  /* Score */
+  .score-block { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--surface2); border-radius: 4px; border: 1px solid var(--border); }
+  .score-num   { font-size: 36px; font-weight: 700; line-height: 1; color: var(--accent); }
+  .score-denom { font-size: 14px; color: var(--text-dim); }
+  .score-bar-wrap { flex: 1; }
+  .score-bar   { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+  .score-bar-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+  .score-bar-fill.good { background: var(--success); }
+  .score-bar-fill.ok   { background: var(--warn); }
+  .score-bar-fill.low  { background: var(--danger); }
+  .score-note  { font-size: 9px; color: var(--text-dim); }
+
+  /* Eval rows */
+  .eval-row { display: grid; grid-template-columns: 130px 1fr 30px; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 10px; }
+  .eval-name { color: var(--text); }
+  .eval-desc { color: var(--text-dim); font-size: 9px; }
+  .eval-check { font-weight: 700; font-size: 13px; }
+  .check-pass { color: var(--success); }
+  .check-half { color: var(--warn); }
+  .check-fail { color: var(--danger); }
+
+  /* AI results */
+  .divider { border-top: 1px solid var(--border); margin: 16px 0; }
+  .ai-item { font-size: 11px; color: var(--text); margin-top: 7px; padding-left: 10px; border-left: 3px solid; line-height: 1.6; }
+  .ai-item.s { border-left-color: #3A7D55; }
+  .ai-item.d { border-left-color: #B03030; }
+  .ai-item.a { border-left-color: #B5651D; }
+
+  /* Loading */
+  .loading-row { display: flex; align-items: center; gap: 12px; color: var(--text-dim); font-size: 11px; padding: 20px 0; }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error */
+  .error-box { color: var(--danger); font-size: 11px; padding: 12px; background: #B0303011; border: 1px solid #B0303044; border-radius: 4px; line-height: 1.5; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(58,46,34,.5); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.visible { display: flex; }
+  .modal { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 28px; width: 480px; max-width: 90vw; box-shadow: 0 8px 32px rgba(58,46,34,.15); }
+  .modal-title { font-size: 13px; font-weight: 700; color: var(--text-bright); margin-bottom: 8px; }
+  .modal-sub   { font-size: 11px; color: var(--text-dim); line-height: 1.6; margin-bottom: 16px; }
+  .modal input { width: 100%; background: #FBF8F4; border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: var(--font); font-size: 12px; padding: 9px 11px; outline: none; margin-bottom: 14px; }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-note  { font-size: 9px; color: var(--text-dim); line-height: 1.6; margin-top: 10px; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">Anthropic API Key Required</div>
+    <div class="modal-sub">Phase 3 uses the Claude API to analyze and improve your prompt.<br>Your key is stored only in this browser session.</div>
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." />
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-save-key">Save Key</button>
+      <button class="btn btn-secondary" id="btn-skip-key">Skip — use local scoring only</button>
+    </div>
+    <div class="modal-note">Get a key at console.anthropic.com → API Keys.<br>The key is cleared when you close this tab.</div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="accent-bar"></div>
+  <div>
+    <div class="header-sub">AI Training — Prompt Writing Track</div>
+    <div class="header-main">Prompt Builder</div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-secondary" id="btn-reset">↺ Start over</button>
+  </div>
+</div>
+
+<!-- Phase nav -->
+<div class="phase-nav">
+  <button class="phase-tab active" id="tab-1">01 — Foundation</button>
+  <button class="phase-tab" id="tab-2" disabled>02 — Detail</button>
+  <button class="phase-tab" id="tab-3" disabled>03 — Evaluate</button>
+</div>
+
+<!-- PHASE 1 -->
+<div class="body" id="phase-1">
+  <div class="left-panel">
+    <div class="section-label">Foundation Questions</div>
+    <p class="phase-intro">Six questions that build the skeleton of any effective prompt.<br>Fill in as many as you can — your prompt assembles live on the right.</p>
+    <div class="field-group">
+      <div class="field-num">01</div><div class="field-label">What is this prompt about?</div>
+      <div class="field-sub">Topic / domain</div>
+      <textarea id="f-topic" rows="2"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-num">02</div><div class="field-label">What do you want Claude to accomplish?</div>
+      <div class="field-sub">The outcome</div>
+      <textarea id="f-outcome" rows="2"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-num">03</div><div class="field-label">Who is the output for?</div>
+      <div class="field-sub">Reader / end user</div>
+      <textarea id="f-audience" rows="2"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-num">04</div><div class="field-label">What does the finished output look like?</div>
+      <div class="field-sub">Format</div>
+      <textarea id="f-format" rows="2"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-num">05</div><div class="field-label">What are the hard limits or rules?</div>
+      <div class="field-sub">What Claude must NOT do</div>
+      <textarea id="f-limits" rows="2"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-num">06</div><div class="field-label">What background does Claude need?</div>
+      <div class="field-sub">Context</div>
+      <textarea id="f-context" rows="3"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-to-2">Continue to Detail →</button>
+    </div>
+  </div>
+  <div class="right-panel">
+    <div>
+      <div class="preview-label">Starter Prompt — Live Preview</div>
+      <div class="progress-row">
+        <span id="progress-count-1">0 / 6 fields filled</span>
+        <span id="progress-dots-1"></span>
+      </div>
+      <div class="preview-box tall" id="preview-1">
+        <span class="preview-empty">Start filling in questions — your prompt builds here.</span>
+      </div>
+    </div>
+    <div class="callout">
+      <div class="callout-label">Track 1 Principle</div>
+      <div class="callout-body">Every prompt needs: <strong>Goal</strong>, <strong>Context</strong>, <strong>Constraints</strong>, and <strong>Standard</strong>.<br><br>More context narrows pattern matching toward your specific answer rather than a generic one.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div class="body" id="phase-2" style="display:none">
+  <div class="left-panel">
+    <div class="section-label">Detail Questions</div>
+    <p class="phase-intro">Add the specifics that separate a decent prompt from a precise one.<br>Role, tone, length, what to avoid, and a style reference.</p>
+    <div class="starter-ref">
+      <div class="starter-ref-label">Your Starter Prompt</div>
+      <div class="starter-ref-text" id="starter-ref-display">Complete Phase 1 first.</div>
+    </div>
+    <div class="field-group">
+      <div class="field-num">01</div><div class="field-label">What role should Claude play?</div>
+      <div class="field-sub">Persona</div>
+      <textarea id="d-role" rows="2"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-num">02</div><div class="field-label">What tone or voice should Claude use?</div>
+      <div class="field-sub">Style</div>
+      <textarea id="d-tone" rows="2"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-num">03</div><div class="field-label">How long should the output be?</div>
+      <div class="field-sub">Scope</div>
+      <textarea id="d-length" rows="2"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-num">04</div><div class="field-label">What should Claude specifically avoid?</div>
+      <div class="field-sub">Negative instructions</div>
+      <textarea id="d-avoid" rows="2"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-num">05</div><div class="field-label">Describe an example of good output</div>
+      <div class="field-sub">Optional style reference</div>
+      <textarea id="d-example" rows="3"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="btn-back-1">← Back</button>
+      <button class="btn btn-primary" id="btn-to-3">Evaluate My Prompt →</button>
+    </div>
+  </div>
+  <div class="right-panel">
+    <div>
+      <div class="preview-label">Refined Prompt — Live Preview</div>
+      <div class="progress-row">
+        <span id="progress-count-2">0 / 5 detail fields filled</span>
+        <span id="progress-dots-2"></span>
+      </div>
+      <div class="preview-box taller" id="preview-2">
+        <span class="preview-empty">Complete Phase 1 first, then add detail here.</span>
+      </div>
+    </div>
+    <div class="callout">
+      <div class="callout-label">Track 1 Principle</div>
+      <div class="callout-body"><strong>Use structured prompting</strong> when reusing prompts, when output format matters, or when mistakes would be costly to fix.<br><br><em style="color:var(--text-dim)">If you'd be annoyed correcting Claude twice on the same task — use a structured prompt.</em></div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="body" id="phase-3" style="display:none">
+  <div class="left-panel">
+    <div class="section-label">Your Assembled Prompt</div>
+    <div class="preview-box" style="min-height:160px;margin-bottom:20px" id="final-prompt-box">
+      <span class="preview-empty">No prompt assembled.</span>
+    </div>
+    <div class="section-label">Score</div>
+    <div class="score-block">
+      <div>
+        <span class="score-num" id="score-num">—</span>
+        <span class="score-denom"> / 11</span>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar"><div class="score-bar-fill" id="score-bar-fill" style="width:0%"></div></div>
+        <div class="score-note" id="score-note">Run evaluation to score</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="section-label">Component Breakdown</div>
+    <div id="eval-rows"></div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-secondary" id="btn-back-2">← Revise Inputs</button>
+      <button class="btn btn-secondary" id="btn-reset-3">↺ Build a New Prompt</button>
+    </div>
+  </div>
+  <div class="right-panel">
+    <div class="loading-row" id="ai-loading" style="display:none">
+      <div class="spinner"></div>Evaluating with Claude...
+    </div>
+    <div class="error-box" id="ai-error" style="display:none"></div>
+    <div id="ai-results" style="display:none">
+      <div class="preview-label">✓ Strengths</div>
+      <div id="ai-strengths"></div>
+      <div class="divider"></div>
+      <div class="preview-label">✗ Gaps</div>
+      <div id="ai-gaps"></div>
+      <div class="divider"></div>
+      <div class="preview-label">→ Suggestions</div>
+      <div id="ai-suggestions"></div>
+      <div class="divider"></div>
+      <div class="preview-label">Improved Version — Placeholders Fill Any Gaps</div>
+      <div class="preview-box" style="position:relative" id="ai-improved-box"></div>
+    </div>
+    <div id="ai-no-key" style="display:none">
+      <div class="callout">
+        <div class="callout-label">API Key Not Set</div>
+        <div class="callout-body">
+          The local score above is based on 11 structural criteria.<br><br>
+          To get Claude's AI-written analysis and improved prompt, add your Anthropic API key.<br><br>
+          <button class="btn btn-primary" id="btn-open-modal" style="margin-top:4px">Add API Key</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var apiKey = '';
+  var currentPhase = 1;
+
+  var EVAL_CRITERIA = [
+    { id: 'goal',        label: 'Clear Goal',    desc: 'What Claude must produce is unambiguous' },
+    { id: 'context',     label: 'Context',        desc: 'Enough background to narrow pattern matching' },
+    { id: 'constraints', label: 'Constraints',    desc: 'Hard limits are stated' },
+    { id: 'format',      label: 'Format Spec',    desc: 'Output shape is defined' },
+    { id: 'audience',    label: 'Audience',       desc: 'Who reads this is clear' },
+    { id: 'role',        label: 'Role / Persona', desc: 'Claude knows what hat to wear' },
+    { id: 'tone',        label: 'Tone / Voice',   desc: 'Style direction is given' },
+    { id: 'length',      label: 'Length Scope',   desc: 'Size or depth is bounded' },
+    { id: 'negative',    label: 'Negative Inst.', desc: 'What NOT to do is explicit' },
+    { id: 'specificity', label: 'Specificity',    desc: 'Concrete details over vague language' },
+    { id: 'single_goal', label: 'Single Focus',   desc: 'One clear job, not multiple asks' },
+  ];
+
+  function val(id) { return (document.getElementById(id).value || '').trim(); }
+  function el(id)  { return document.getElementById(id); }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+  }
+
+  function getFoundation() {
+    return { topic: val('f-topic'), outcome: val('f-outcome'), audience: val('f-audience'),
+             format: val('f-format'), limits: val('f-limits'), context: val('f-context') };
+  }
+  function getDetail() {
+    return { role: val('d-role'), tone: val('d-tone'), length: val('d-length'),
+             avoid: val('d-avoid'), example: val('d-example') };
+  }
+
+  function assembleStarter(fd) {
+    var parts = [];
+    if (fd.outcome)  parts.push(fd.outcome);
+    if (fd.topic)    parts.push('Topic: ' + fd.topic);
+    if (fd.context)  parts.push('Background: ' + fd.context);
+    if (fd.audience) parts.push('Audience: ' + fd.audience);
+    if (fd.format)   parts.push('Format: ' + fd.format);
+    if (fd.limits)   parts.push('Do not: ' + fd.limits);
+    return parts.join('\n\n');
+  }
+
+  function assembleRefined(fd, det) {
+    var parts = [];
+    if (det.role)    parts.push('You are ' + det.role + '.');
+    if (fd.outcome)  parts.push(fd.outcome);
+    if (fd.topic)    parts.push('Topic: ' + fd.topic);
+    if (fd.context)  parts.push('Background: ' + fd.context);
+    if (fd.audience) parts.push('Audience: ' + fd.audience);
+    if (fd.format)   parts.push('Format: ' + fd.format);
+    if (det.tone)    parts.push('Tone: ' + det.tone);
+    if (det.length)  parts.push('Length: ' + det.length);
+    var avoidParts = [fd.limits, det.avoid].filter(Boolean).join('; ');
+    if (avoidParts)  parts.push('Do not: ' + avoidParts);
+    if (det.example) parts.push('Example of good output: ' + det.example);
+    return parts.join('\n\n');
+  }
+
+  function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(function () {
+      var orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      setTimeout(function () { btn.textContent = orig; }, 1500);
+    });
+  }
+
+  function makeCopyBtn(text) {
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () { copyToClipboard(text, btn); });
+    return btn;
+  }
+
+  function setPreview(boxId, text) {
+    var box = el(boxId);
+    box.innerHTML = '';
+    if (text) {
+      var span = document.createElement('span');
+      span.style.cssText = 'display:block;padding-right:64px';
+      span.innerHTML = escHtml(text);
+      box.appendChild(makeCopyBtn(text));
+      box.appendChild(span);
+    } else {
+      box.innerHTML = '<span class="preview-empty">Start filling in questions — your prompt builds here.</span>';
+    }
+  }
+
+  function updateDots(dotsId, countId, filled, total) {
+    el(countId).textContent = filled + ' / ' + total + ' fields filled';
+    var dotsEl = el(dotsId);
+    dotsEl.innerHTML = '';
+    for (var i = 0; i < total; i++) {
+      var d = document.createElement('span');
+      d.className = 'dot' + (i < filled ? ' filled' : '');
+      dotsEl.appendChild(d);
+    }
+  }
+
+  function updatePreview1() {
+    var fd = getFoundation();
+    var ids = ['f-topic','f-outcome','f-audience','f-format','f-limits','f-context'];
+    var filled = ids.filter(function(id){ return val(id).length > 0; }).length;
+    updateDots('progress-dots-1','progress-count-1', filled, 6);
+    setPreview('preview-1', assembleStarter(fd));
+  }
+
+  function updatePreview2() {
+    var fd  = getFoundation();
+    var det = getDetail();
+    el('starter-ref-display').textContent = assembleStarter(fd) || 'Complete Phase 1 first.';
+    var ids2 = ['d-role','d-tone','d-length','d-avoid','d-example'];
+    var filled2 = ids2.filter(function(id){ return val(id).length > 0; }).length;
+    updateDots('progress-dots-2','progress-count-2', filled2, 5);
+    var box2 = el('preview-2');
+    var refined = assembleRefined(fd, det);
+    box2.innerHTML = '';
+    if (refined) {
+      var span2 = document.createElement('span');
+      span2.style.cssText = 'display:block;padding-right:64px';
+      span2.innerHTML = escHtml(refined);
+      box2.appendChild(makeCopyBtn(refined));
+      box2.appendChild(span2);
+    } else {
+      box2.innerHTML = '<span class="preview-empty">Complete Phase 1 first, then add detail here.</span>';
+    }
+  }
+
+  function goToPhase(n) {
+    currentPhase = n;
+    [1,2,3].forEach(function(i) {
+      el('phase-' + i).style.display = (i === n) ? 'grid' : 'none';
+      var tab = el('tab-' + i);
+      tab.className = 'phase-tab';
+      if (i === n) tab.classList.add('active');
+      else if (i < n) tab.classList.add('done');
+      tab.disabled = (i > n);
+    });
+    if (n === 2) updatePreview2();
+    if (n === 3) runPhase3();
+  }
+
+  function evaluatePrompt(fd, det) {
+    var prompt = assembleRefined(fd, det).toLowerCase();
+    var scores = {};
+    scores.goal        = fd.outcome  && fd.outcome.length  > 10 ? 1 : 0;
+    scores.context     = fd.context  && fd.context.length  > 10 ? 1 : 0;
+    scores.constraints = ((fd.limits && fd.limits.length > 5) || (det.avoid && det.avoid.length > 5)) ? 1 : 0;
+    scores.format      = fd.format   && fd.format.length   > 3  ? 1 : 0;
+    scores.audience    = fd.audience && fd.audience.length > 3  ? 1 : 0;
+    scores.role        = det.role    && det.role.length    > 3  ? 1 : 0;
+    scores.tone        = det.tone    && det.tone.length    > 3  ? 1 : 0;
+    scores.length      = det.length  && det.length.length  > 3  ? 1 : 0;
+    scores.negative    = ((fd.limits && fd.limits.length > 5) || (det.avoid && det.avoid.length > 5)) ? 1 : 0;
+    var specWords = ['specifically','exactly','only','must','always','never','include','exclude','format','bullet','paragraph','words','sentences','list'];
+    var hits = specWords.filter(function(w){ return prompt.indexOf(w) !== -1; }).length;
+    scores.specificity = hits >= 2 ? 1 : hits >= 1 ? 0.5 : 0;
+    scores.single_goal = /\band\b.*\band\b/.test(prompt) ? 0.5 : 1;
+    var total = Object.values(scores).reduce(function(a,b){ return a+b; }, 0);
+    return { scores: scores, total: Math.round(total * 10) / 10 };
+  }
+
+  function runPhase3() {
+    var fd  = getFoundation();
+    var det = getDetail();
+    var prompt = assembleRefined(fd, det);
+
+    var fbox = el('final-prompt-box');
+    fbox.innerHTML = '';
+    if (prompt) {
+      var fs = document.createElement('span');
+      fs.style.cssText = 'display:block;padding-right:64px';
+      fs.innerHTML = escHtml(prompt);
+      fbox.appendChild(makeCopyBtn(prompt));
+      fbox.appendChild(fs);
+    } else {
+      fbox.innerHTML = '<span class="preview-empty">No prompt assembled.</span>';
+    }
+
+    var result = evaluatePrompt(fd, det);
+    var pct = Math.round((result.total / 11) * 100);
+    el('score-num').textContent = result.total;
+    var fill = el('score-bar-fill');
+    fill.style.width = pct + '%';
+    fill.className = 'score-bar-fill ' + (pct >= 80 ? 'good' : pct >= 60 ? 'ok' : 'low');
+    el('score-note').textContent = pct >= 80 ? 'Strong prompt — ready to use' :
+                                   pct >= 60 ? 'Good foundation — gaps worth filling' :
+                                               'Needs more detail — review gaps below';
+
+    var rowsEl = el('eval-rows');
+    rowsEl.innerHTML = '';
+    EVAL_CRITERIA.forEach(function(c) {
+      var s = result.scores[c.id] || 0;
+      var cls  = s >= 1 ? 'check-pass' : s >= 0.5 ? 'check-half' : 'check-fail';
+      var mark = s >= 1 ? '✓' : s >= 0.5 ? '~' : '✗';
+      var row = document.createElement('div');
+      row.className = 'eval-row';
+      row.innerHTML = '<span class="eval-name">' + c.label + '</span>' +
+                      '<span class="eval-desc">'  + c.desc  + '</span>' +
+                      '<span class="eval-check '  + cls + '">' + mark + '</span>';
+      rowsEl.appendChild(row);
+    });
+
+    el('ai-loading').style.display = 'none';
+    el('ai-error').style.display   = 'none';
+    el('ai-results').style.display = 'none';
+    el('ai-no-key').style.display  = 'none';
+
+    if (!prompt) return;
+    if (!apiKey) { el('ai-no-key').style.display = 'block'; return; }
+
+    el('ai-loading').style.display = 'flex';
+    fetchClaudeEval(prompt)
+      .then(function(r) { el('ai-loading').style.display = 'none'; renderAiResults(r); })
+      .catch(function(err) {
+        el('ai-loading').style.display = 'none';
+        var errEl = el('ai-error');
+        errEl.style.display = 'block';
+        errEl.textContent = 'Claude evaluation failed: ' + (err.message || 'Check your API key and connection.');
+      });
+  }
+
+  function fetchClaudeEval(prompt) {
+    var system = 'You are an expert prompt engineer. Evaluate the user\'s prompt and return JSON only — no markdown, no preamble, no backticks.\nSchema: { "strengths": ["...","..."], "gaps": ["...","..."], "suggestions": ["...","..."], "improvedPrompt": "..." }\n- strengths: 2-3 specific things done well\n- gaps: 2-3 missing elements\n- suggestions: 2 actionable rewrites\n- improvedPrompt: rewritten version filling gaps; use [PLACEHOLDER] where user must supply info';
+    return fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey,
+                 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: system,
+                             messages: [{ role: 'user', content: 'Evaluate and improve this prompt:\n\n' + prompt }] })
+    })
+    .then(function(resp) {
+      if (!resp.ok) return resp.json().then(function(e){ throw new Error(e.error && e.error.message ? e.error.message : 'API error ' + resp.status); });
+      return resp.json();
+    })
+    .then(function(data) {
+      var text = (data.content || []).map(function(b){ return b.text || ''; }).join('');
+      return JSON.parse(text.replace(/```json|```/g,'').trim());
+    });
+  }
+
+  function renderAiResults(r) {
+    el('ai-strengths').innerHTML  = (r.strengths  || []).map(function(s){ return '<div class="ai-item s">' + escHtml(s) + '</div>'; }).join('');
+    el('ai-gaps').innerHTML       = (r.gaps       || []).map(function(g){ return '<div class="ai-item d">' + escHtml(g) + '</div>'; }).join('');
+    el('ai-suggestions').innerHTML= (r.suggestions|| []).map(function(s){ return '<div class="ai-item a">' + escHtml(s) + '</div>'; }).join('');
+    var ibox = el('ai-improved-box');
+    ibox.innerHTML = '';
+    var ispan = document.createElement('span');
+    ispan.style.cssText = 'display:block;padding-right:64px';
+    ispan.innerHTML = escHtml(r.improvedPrompt || '');
+    ibox.appendChild(makeCopyBtn(r.improvedPrompt || ''));
+    ibox.appendChild(ispan);
+    el('ai-results').style.display = 'block';
+  }
+
+  function openModal()  { el('modal').classList.add('visible'); el('api-key-input').focus(); }
+  function closeModal() { el('modal').classList.remove('visible'); }
+  function saveApiKey() {
+    var k = el('api-key-input').value.trim();
+    if (k) { apiKey = k; closeModal(); if (currentPhase === 3) runPhase3(); }
+  }
+
+  function resetAll() {
+    ['f-topic','f-outcome','f-audience','f-format','f-limits','f-context',
+     'd-role','d-tone','d-length','d-avoid','d-example'].forEach(function(id){ el(id).value = ''; });
+    goToPhase(1);
+    updatePreview1();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    el('btn-to-2').addEventListener('click',    function(){ goToPhase(2); });
+    el('btn-back-1').addEventListener('click',  function(){ goToPhase(1); });
+    el('btn-to-3').addEventListener('click',    function(){ goToPhase(3); });
+    el('btn-back-2').addEventListener('click',  function(){ goToPhase(2); });
+    el('btn-reset').addEventListener('click',   resetAll);
+    el('btn-reset-3').addEventListener('click', resetAll);
+    el('tab-1').addEventListener('click', function(){ if (currentPhase >= 1) goToPhase(1); });
+    el('tab-2').addEventListener('click', function(){ if (currentPhase >= 2) goToPhase(2); });
+    el('tab-3').addEventListener('click', function(){ if (currentPhase >= 3) goToPhase(3); });
+    el('btn-save-key').addEventListener('click', saveApiKey);
+    el('btn-skip-key').addEventListener('click', closeModal);
+    el('btn-open-modal').addEventListener('click', openModal);
+    el('api-key-input').addEventListener('keydown', function(e){ if (e.key === 'Enter') saveApiKey(); });
+    ['f-topic','f-outcome','f-audience','f-format','f-limits','f-context'].forEach(function(id){
+      el(id).addEventListener('input', updatePreview1);
+    });
+    ['d-role','d-tone','d-length','d-avoid','d-example'].forEach(function(id){
+      el(id).addEventListener('input', updatePreview2);
+    });
+    updatePreview1();
+  });
+
+})();
+</script>
+</body>
+</html>
